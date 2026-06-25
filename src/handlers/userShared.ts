@@ -5,6 +5,8 @@ import { REQUEST_ID } from '../constants/requests';
 import { mainMenuKeyboard } from '../keyboards/mainMenu';
 import { logger } from '../utils/logger';
 import type { SharedTarget, UsersSharedCompat } from '../telegram/userShareTypes';
+import { findActiveByTarget } from '../services/blacklist.service';
+import { formatQueryResult } from '../views/queryResult';
 
 /**
  * 从 users_shared 服务消息提炼目标用户。
@@ -30,16 +32,6 @@ export function extractSharedTarget(usersShared: unknown): SharedTarget | null {
   }
 
   return null;
-}
-
-function formatTargetEcho(t: SharedTarget): string {
-  return [
-    '已获取所选用户（M3 底座验证）：',
-    '',
-    `数字ID：${t.telegramId}`,
-    `用户名：${t.username ? '@' + t.username : '（未公开）'}`,
-    `名称：${t.firstName ?? '（无）'}`,
-  ].join('\n');
 }
 
 /**
@@ -72,10 +64,12 @@ export function registerUserShared(bot: Telegraf<BotContext>): void {
     );
 
     switch (shared.request_id) {
-      case REQUEST_ID.QUERY:
-        // M3：回显字段以验证底座；M4 将替换为真实查询与结果渲染
-        await ctx.reply(formatTargetEcho(target), mainMenuKeyboard(user.role));
+      case REQUEST_ID.QUERY: {
+        // M4：按 telegram_id 查询有效黑名单记录并渲染结果
+        const records = await findActiveByTarget(target.telegramId);
+        await ctx.reply(formatQueryResult(target, records), mainMenuKeyboard(user.role));
         break;
+      }
       default:
         await ctx.reply('（该选择用户场景将于后续里程碑接入）', mainMenuKeyboard(user.role));
     }
