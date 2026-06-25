@@ -10,7 +10,11 @@ import { BTN, TEACHER_FEATURE_BUTTONS, ADMIN_ONLY_BUTTONS } from './constants/bu
 import { REQUEST_ID } from './constants/requests';
 import { selectUserKeyboard } from './keyboards/selectUser';
 import { registerUserShared } from './handlers/userShared';
-import { registerAddBlacklist } from './handlers/addBlacklist';
+import {
+  registerAddBlacklist,
+  handleManualAddText,
+  handleManualAddForward,
+} from './handlers/addBlacklist';
 import { registerTeacherMgmt } from './handlers/teacherMgmt';
 import { registerAnnouncements, handleAnnouncementText } from './handlers/announcement';
 import { registerAdminMgmt } from './handlers/adminMgmt';
@@ -77,8 +81,15 @@ bot.hears(ADMIN_ONLY_BUTTONS, async (ctx) => {
 // 选择用户底座：统一处理 users_shared（M3；按 request_id 路由场景）
 registerUserShared(bot);
 
-// 其它文本：发布公告流程捕获正文；否则回到主菜单（全键盘交互）
+// 手动录入：转发对方消息 → 取发送者数字ID（仅在「手动录入」态消费，否则放行）
+bot.on(message('forward_origin'), async (ctx, next) => {
+  if (await handleManualAddForward(ctx, ctx.message.forward_origin)) return;
+  return next();
+});
+
+// 其它文本：手动录入解析 → 发布公告捕获 → 否则回到主菜单（全键盘交互）
 bot.on(message('text'), async (ctx) => {
+  if (await handleManualAddText(ctx, ctx.message.text)) return;
   if (await handleAnnouncementText(ctx, ctx.message.text)) return;
   await showMainMenu(ctx);
 });

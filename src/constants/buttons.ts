@@ -6,6 +6,7 @@ export const BTN = {
   TEACHER_MGMT: '👨‍🏫 老师管理',
   SYSTEM_SETTINGS: '⚙️ 系统设置',
   HOME: '🏠 返回首页',
+  MANUAL_ADD: '✍️ 手动录入',
   CONFIRM_ADD: '✅ 确认录入',
   CANCEL_ADD: '❌ 取消录入',
   CONTINUE_ADD: '🚫 继续录入',

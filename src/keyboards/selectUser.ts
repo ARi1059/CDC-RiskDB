@@ -8,10 +8,11 @@ const SELECT_USER_TEXT = '👤 选择用户';
 /**
  * 「选择用户」reply 键盘：
  *   - 一个 request_users 按钮（开启 request_name / request_username，单选 1 人）
+ *   - 可选的 extraRows（如录入场景的「✍️ 手动录入」），插在分享按钮与返回首页之间
  *   - 一个「返回首页」
  * requestId 用于在 users_shared 回传时路由到对应场景（查询 / 录入 / 加老师）。
  */
-export function selectUserKeyboard(requestId: number) {
+export function selectUserKeyboard(requestId: number, extraRows: string[][] = []) {
   const requestUsers: RequestUsersFull = {
     request_id: requestId,
     user_is_bot: false,
@@ -27,5 +28,5 @@ export function selectUserKeyboard(requestId: number) {
     request_users: requestUsers,
   } as unknown as KeyboardButton.RequestUsersButton;
 
-  return Markup.keyboard([[selectButton], [BTN.HOME]]).resize();
+  return Markup.keyboard([[selectButton], ...extraRows, [BTN.HOME]]).resize();
 }
