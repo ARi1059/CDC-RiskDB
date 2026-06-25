@@ -1,15 +1,56 @@
-import { Telegraf } from 'telegraf';
+import { Telegraf, session } from 'telegraf';
 import { message } from 'telegraf/filters';
 import { env } from './config/env';
 import { logger } from './utils/logger';
+import type { BotContext, SessionData } from './context';
+import { redisSessionStore } from './redis/sessionStore';
+import { authMiddleware } from './middlewares/auth';
+import { mainMenuKeyboard } from './keyboards/mainMenu';
+import { BTN, TEACHER_FEATURE_BUTTONS, ADMIN_ONLY_BUTTONS } from './constants/buttons';
 
-export const bot = new Telegraf(env.BOT_TOKEN);
+export const bot = new Telegraf<BotContext>(env.BOT_TOKEN);
 
-// M0 占位：对任意文本消息回 "ok"。
-// 后续里程碑（M2 起）将替换为鉴权中间件、角色主菜单与各业务场景。
+// 会话（Redis）—— 为 M3 起的多步场景打底
+bot.use(session({ store: redisSessionStore<SessionData>() }));
+
+// 鉴权 + 白名单门禁（之后的处理器中 ctx.dbUser 必有值）
+bot.use(authMiddleware);
+
+/** 发送角色主菜单 */
+async function showMainMenu(ctx: BotContext, greeting?: string): Promise<void> {
+  const user = ctx.dbUser;
+  if (!user) return;
+  await ctx.reply(greeting ?? '请选择操作', mainMenuKeyboard(user.role));
+  logger.info({ telegramId: String(user.telegramId), role: user.role }, '主菜单已发送');
+}
+
+// 入口：/start
+bot.start(async (ctx) => {
+  await showMainMenu(ctx, '欢迎使用黑名单共享系统');
+});
+
+// 返回首页
+bot.hears(BTN.HOME, async (ctx) => {
+  await showMainMenu(ctx);
+});
+
+// M2 占位：Teacher / Admin 共有功能按钮（M3+ 实现具体流程）
+bot.hears(TEACHER_FEATURE_BUTTONS, async (ctx) => {
+  await ctx.reply(`「${ctx.message.text}」功能将于后续里程碑开放`);
+});
+
+// M2 占位：Admin 专属按钮（带角色二次校验）
+bot.hears(ADMIN_ONLY_BUTTONS, async (ctx) => {
+  if (ctx.dbUser?.role !== 'admin') {
+    await ctx.reply('⛔ 该功能仅管理员可用');
+    return;
+  }
+  await ctx.reply(`「${ctx.message.text}」功能将于后续里程碑开放`);
+});
+
+// 其它文本 → 回到主菜单（全键盘交互，不识别自由文本输入）
 bot.on(message('text'), async (ctx) => {
-  await ctx.reply('ok');
-  logger.info({ from: ctx.from.id, text: ctx.message.text }, '收到文本消息，已回复 ok');
+  await showMainMenu(ctx);
 });
 
 // 全局错误兜底，避免单条更新异常导致进程崩溃
