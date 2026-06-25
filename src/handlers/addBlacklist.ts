@@ -17,6 +17,7 @@ import {
   softDeleteRecord,
 } from '../services/blacklist.service';
 import { logger } from '../utils/logger';
+import { broadcastNewEntry } from '../services/broadcast.service';
 
 function toTargetLite(t: SharedTarget): TargetLite {
   return { id: String(t.telegramId), username: t.username, firstName: t.firstName };
@@ -115,7 +116,10 @@ export function registerAddBlacklist(bot: Telegraf<BotContext>): void {
         { operator: String(user.telegramId), target: flow.target.id, reason: record.reason },
         '黑名单录入成功',
       );
-      // TODO(M6)：录入成功后触发私聊广播
+      // M6：录入成功后异步私聊广播（fire-and-forget，不阻塞回执）
+      void broadcastNewEntry(ctx.telegram, user).catch((e) =>
+        logger.error({ err: e }, '录入广播异常'),
+      );
     } catch (err) {
       clearFlow(ctx);
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
