@@ -20,6 +20,7 @@ export const REASONS: ReasonOption[] = [
   { button: '👊 暴力', label: '暴力' },
   { button: '👎 素质不高', label: '素质不高' },
   { button: '🧼 个人卫生差', label: '个人卫生差' },
+  { button: '🎣 钓鱼', label: '钓鱼' },
 ];
 
 /** 用于 hears 匹配的原因按钮文案集合 */
