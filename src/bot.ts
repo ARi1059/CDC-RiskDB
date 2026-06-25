@@ -7,6 +7,9 @@ import { redisSessionStore } from './redis/sessionStore';
 import { authMiddleware } from './middlewares/auth';
 import { mainMenuKeyboard } from './keyboards/mainMenu';
 import { BTN, TEACHER_FEATURE_BUTTONS, ADMIN_ONLY_BUTTONS } from './constants/buttons';
+import { REQUEST_ID } from './constants/requests';
+import { selectUserKeyboard } from './keyboards/selectUser';
+import { registerUserShared } from './handlers/userShared';
 
 export const bot = new Telegraf<BotContext>(env.BOT_TOKEN);
 
@@ -34,7 +37,12 @@ bot.hears(BTN.HOME, async (ctx) => {
   await showMainMenu(ctx);
 });
 
-// M2 占位：Teacher / Admin 共有功能按钮（M3+ 实现具体流程）
+// 🔍 查询用户 → 进入「选择用户」（M3 底座；M4 接真实查询）
+bot.hears(BTN.QUERY, async (ctx) => {
+  await ctx.reply('请选择需要查询的用户', selectUserKeyboard(REQUEST_ID.QUERY));
+});
+
+// M2 占位：其余功能按钮（QUERY 已被上面的具体处理器拦截）
 bot.hears(TEACHER_FEATURE_BUTTONS, async (ctx) => {
   await ctx.reply(`「${ctx.message.text}」功能将于后续里程碑开放`);
 });
@@ -47,6 +55,9 @@ bot.hears(ADMIN_ONLY_BUTTONS, async (ctx) => {
   }
   await ctx.reply(`「${ctx.message.text}」功能将于后续里程碑开放`);
 });
+
+// 选择用户底座：统一处理 users_shared（M3；按 request_id 路由场景）
+registerUserShared(bot);
 
 // 其它文本 → 回到主菜单（全键盘交互，不识别自由文本输入）
 bot.on(message('text'), async (ctx) => {
