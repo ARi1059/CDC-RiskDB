@@ -93,3 +93,59 @@ export async function disableTeacher(telegramId: bigint): Promise<User | null> {
   }
   return prisma.user.update({ where: { telegramId }, data: { isActive: false } });
 }
+
+/** 管理员列表（role=admin），按创建时间升序 */
+export function listAdmins(): Promise<User[]> {
+  return prisma.user.findMany({ where: { role: 'admin' }, orderBy: { createdAt: 'asc' } });
+}
+
+export interface AddAdminResult {
+  status: 'created' | 'promoted' | 'already_admin';
+  user: User;
+}
+
+/** 添加管理员：已是管理员 → 拒绝；老师 → 提升；新用户 → 新建。 */
+export async function addAdmin(input: AddTeacherInput): Promise<AddAdminResult> {
+  const existing = await prisma.user.findUnique({ where: { telegramId: input.telegramId } });
+  if (existing) {
+    if (existing.role === 'admin') {
+      return { status: 'already_admin', user: existing };
+    }
+    const user = await prisma.user.update({
+      where: { telegramId: input.telegramId },
+      data: { role: 'admin', isActive: true, username: input.username, firstName: input.firstName },
+    });
+    return { status: 'promoted', user };
+  }
+  const user = await prisma.user.create({
+    data: {
+      telegramId: input.telegramId,
+      username: input.username,
+      firstName: input.firstName,
+      role: 'admin',
+      isActive: true,
+    },
+  });
+  return { status: 'created', user };
+}
+
+export type RemoveAdminResult =
+  | { status: 'demoted'; user: User }
+  | { status: 'last_admin' | 'not_admin' };
+
+/** 移除管理员（降为老师）。护栏：不能移除最后一名管理员。 */
+export async function removeAdmin(telegramId: bigint): Promise<RemoveAdminResult> {
+  const existing = await prisma.user.findUnique({ where: { telegramId } });
+  if (!existing || existing.role !== 'admin') {
+    return { status: 'not_admin' };
+  }
+  const adminCount = await prisma.user.count({ where: { role: 'admin' } });
+  if (adminCount <= 1) {
+    return { status: 'last_admin' };
+  }
+  const user = await prisma.user.update({
+    where: { telegramId },
+    data: { role: 'teacher', isActive: true },
+  });
+  return { status: 'demoted', user };
+}

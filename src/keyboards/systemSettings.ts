@@ -8,6 +8,7 @@ export function systemSettingsMenu() {
   return Markup.keyboard([
     [BTN.PUBLISH_ANNOUNCEMENT],
     [BTN.ANNOUNCEMENT_MGMT],
+    [BTN.ADMIN_MGMT],
     [BTN.HOME],
   ]).resize();
 }

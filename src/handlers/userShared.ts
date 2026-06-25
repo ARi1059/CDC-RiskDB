@@ -9,6 +9,7 @@ import { findActiveByTarget } from '../services/blacklist.service';
 import { formatQueryResult } from '../views/queryResult';
 import { handleSelectedUserForAdd } from './addBlacklist';
 import { handleSelectedUserForAddTeacher } from './teacherMgmt';
+import { handleSelectedUserForAddAdmin } from './adminMgmt';
 
 /**
  * 从 users_shared 服务消息提炼目标用户。
@@ -79,6 +80,10 @@ export function registerUserShared(bot: Telegraf<BotContext>): void {
       case REQUEST_ID.ADD_TEACHER:
         // M7：添加老师授权
         await handleSelectedUserForAddTeacher(ctx, target);
+        break;
+      case REQUEST_ID.ADD_ADMIN:
+        // 添加管理员
+        await handleSelectedUserForAddAdmin(ctx, target);
         break;
       default:
         await ctx.reply('（该选择用户场景将于后续里程碑接入）', mainMenuKeyboard(user.role));

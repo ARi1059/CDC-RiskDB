@@ -7,4 +7,5 @@ export const REQUEST_ID = {
   QUERY: 1, // 查询用户
   ADD_BLACKLIST: 2, // 录入黑名单
   ADD_TEACHER: 3, // 添加老师
+  ADD_ADMIN: 4, // 添加管理员
 } as const;

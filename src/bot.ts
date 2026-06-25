@@ -13,6 +13,7 @@ import { registerUserShared } from './handlers/userShared';
 import { registerAddBlacklist } from './handlers/addBlacklist';
 import { registerTeacherMgmt } from './handlers/teacherMgmt';
 import { registerAnnouncements, handleAnnouncementText } from './handlers/announcement';
+import { registerAdminMgmt } from './handlers/adminMgmt';
 import { clearFlow } from './session';
 
 export const bot = new Telegraf<BotContext>(env.BOT_TOKEN);
@@ -52,6 +53,9 @@ registerAddBlacklist(bot);
 
 // 📢 机器人公告查看 + ⚙️ 系统设置（发布 / 管理公告）
 registerAnnouncements(bot);
+
+// 👑 管理员管理（添加 / 移除 / 列表，仅管理员）
+registerAdminMgmt(bot);
 
 // M2 占位：其余功能按钮（QUERY / ADD_BLACKLIST 已被上面的具体处理器拦截）
 bot.hears(TEACHER_FEATURE_BUTTONS, async (ctx) => {
