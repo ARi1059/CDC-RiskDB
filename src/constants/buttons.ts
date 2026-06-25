@@ -14,6 +14,8 @@ export const BTN = {
   ADD_TEACHER: '➕ 添加老师',
   REMOVE_TEACHER: '➖ 移除老师',
   TEACHER_LIST: '📋 老师列表',
+  PUBLISH_ANNOUNCEMENT: '📢 发布公告',
+  ANNOUNCEMENT_MGMT: '📜 公告管理',
 } as const;
 
 /** Teacher 与 Admin 共有的功能按钮 */

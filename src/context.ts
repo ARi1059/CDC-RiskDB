@@ -17,7 +17,8 @@ export interface TargetLite {
 export type Flow =
   | { kind: 'add'; step: 'reason' | 'confirm'; target: TargetLite; reason?: string }
   | { kind: 'dup'; target: TargetLite; recordId: string }
-  | { kind: 'updateReason'; target: TargetLite; recordId: string };
+  | { kind: 'updateReason'; target: TargetLite; recordId: string }
+  | { kind: 'publishAnnouncement' };
 
 /** 会话数据（存于 Redis） */
 export interface SessionData {

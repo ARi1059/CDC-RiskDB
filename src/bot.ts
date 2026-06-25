@@ -12,6 +12,7 @@ import { selectUserKeyboard } from './keyboards/selectUser';
 import { registerUserShared } from './handlers/userShared';
 import { registerAddBlacklist } from './handlers/addBlacklist';
 import { registerTeacherMgmt } from './handlers/teacherMgmt';
+import { registerAnnouncements, handleAnnouncementText } from './handlers/announcement';
 import { clearFlow } from './session';
 
 export const bot = new Telegraf<BotContext>(env.BOT_TOKEN);
@@ -49,6 +50,9 @@ bot.hears(BTN.QUERY, async (ctx) => {
 // 🚫 录入黑名单全流程（入口 / 选原因 / 确认 / 取消 / 更新原因 / 删除）（M5）
 registerAddBlacklist(bot);
 
+// 📢 机器人公告查看 + ⚙️ 系统设置（发布 / 管理公告）
+registerAnnouncements(bot);
+
 // M2 占位：其余功能按钮（QUERY / ADD_BLACKLIST 已被上面的具体处理器拦截）
 bot.hears(TEACHER_FEATURE_BUTTONS, async (ctx) => {
   await ctx.reply(`「${ctx.message.text}」功能将于后续里程碑开放`);
@@ -69,8 +73,9 @@ bot.hears(ADMIN_ONLY_BUTTONS, async (ctx) => {
 // 选择用户底座：统一处理 users_shared（M3；按 request_id 路由场景）
 registerUserShared(bot);
 
-// 其它文本 → 回到主菜单（全键盘交互，不识别自由文本输入）
+// 其它文本：发布公告流程捕获正文；否则回到主菜单（全键盘交互）
 bot.on(message('text'), async (ctx) => {
+  if (await handleAnnouncementText(ctx, ctx.message.text)) return;
   await showMainMenu(ctx);
 });
 
