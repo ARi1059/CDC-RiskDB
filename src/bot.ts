@@ -10,6 +10,8 @@ import { BTN, TEACHER_FEATURE_BUTTONS, ADMIN_ONLY_BUTTONS } from './constants/bu
 import { REQUEST_ID } from './constants/requests';
 import { selectUserKeyboard } from './keyboards/selectUser';
 import { registerUserShared } from './handlers/userShared';
+import { registerAddBlacklist } from './handlers/addBlacklist';
+import { clearFlow } from './session';
 
 export const bot = new Telegraf<BotContext>(env.BOT_TOKEN);
 
@@ -32,8 +34,9 @@ bot.start(async (ctx) => {
   await showMainMenu(ctx, '欢迎使用黑名单共享系统');
 });
 
-// 返回首页
+// 返回首页（清除进行中的多步流程）
 bot.hears(BTN.HOME, async (ctx) => {
+  clearFlow(ctx);
   await showMainMenu(ctx);
 });
 
@@ -42,7 +45,10 @@ bot.hears(BTN.QUERY, async (ctx) => {
   await ctx.reply('请选择需要查询的用户', selectUserKeyboard(REQUEST_ID.QUERY));
 });
 
-// M2 占位：其余功能按钮（QUERY 已被上面的具体处理器拦截）
+// 🚫 录入黑名单全流程（入口 / 选原因 / 确认 / 取消 / 更新原因 / 删除）（M5）
+registerAddBlacklist(bot);
+
+// M2 占位：其余功能按钮（QUERY / ADD_BLACKLIST 已被上面的具体处理器拦截）
 bot.hears(TEACHER_FEATURE_BUTTONS, async (ctx) => {
   await ctx.reply(`「${ctx.message.text}」功能将于后续里程碑开放`);
 });

@@ -1,10 +1,27 @@
 import type { Context } from 'telegraf';
 import type { User as DbUser } from '@prisma/client';
 
-/** 多步场景的会话状态（M3 起逐步填充：当前场景、暂存目标用户、待选原因等） */
+/** 暂存于会话的目标用户。bigint 以 string 保存，避免 JSON 序列化问题。 */
+export interface TargetLite {
+  id: string;
+  username: string | null;
+  firstName: string | null;
+}
+
+/**
+ * 多步流程状态（存于 Redis 会话）。
+ * - add：录入流程（选原因 → 确认）
+ * - dup：判重命中后的「重复提示」待操作态
+ * - updateReason：更新原因待选新原因态
+ */
+export type Flow =
+  | { kind: 'add'; step: 'reason' | 'confirm'; target: TargetLite; reason?: string }
+  | { kind: 'dup'; target: TargetLite; recordId: string }
+  | { kind: 'updateReason'; target: TargetLite; recordId: string };
+
+/** 会话数据（存于 Redis） */
 export interface SessionData {
-  // 预留
-  placeholder?: never;
+  flow?: Flow;
 }
 
 /** 全局 Bot 上下文：附带 Redis 会话与鉴权后注入的当前用户 */

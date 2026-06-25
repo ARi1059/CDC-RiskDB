@@ -7,6 +7,11 @@ export const BTN = {
   TEACHER_MGMT: '👨‍🏫 老师管理',
   SYSTEM_SETTINGS: '⚙️ 系统设置',
   HOME: '🏠 返回首页',
+  CONFIRM_ADD: '✅ 确认录入',
+  CANCEL_ADD: '❌ 取消录入',
+  CONTINUE_ADD: '🚫 继续录入',
+  UPDATE_REASON: '🔄 更新原因',
+  DELETE_RECORD: '🗑 删除记录',
 } as const;
 
 /** Teacher 与 Admin 共有的功能按钮 */
