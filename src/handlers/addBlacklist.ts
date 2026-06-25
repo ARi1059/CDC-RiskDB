@@ -117,7 +117,7 @@ export function registerAddBlacklist(bot: Telegraf<BotContext>): void {
         '黑名单录入成功',
       );
       // M6：录入成功后异步私聊广播（fire-and-forget，不阻塞回执）
-      void broadcastNewEntry(ctx.telegram, user).catch((e) =>
+      void broadcastNewEntry(ctx.telegram, user, record).catch((e) =>
         logger.error({ err: e }, '录入广播异常'),
       );
     } catch (err) {
