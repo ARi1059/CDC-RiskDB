@@ -14,8 +14,8 @@ mkdir -p "$BACKUP_DIR"
 TS="$(date +%Y%m%d-%H%M%S)"
 FILE="$BACKUP_DIR/${DB_NAME}-${TS}.sql.gz"
 
-# 以 postgres 超级用户本地导出（无需密码）
-sudo -u postgres pg_dump "$DB_NAME" | gzip > "$FILE"
+# 以 postgres 超级用户本地导出（无需密码；runuser 属 util-linux，Debian 自带）
+runuser -u postgres -- pg_dump "$DB_NAME" | gzip > "$FILE"
 echo "[backup] $(date '+%F %T') -> $FILE"
 
 # 轮转：删除超过 KEEP_DAYS 天的备份

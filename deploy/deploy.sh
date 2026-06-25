@@ -26,6 +26,9 @@ ENV_FILE="$APP_DIR/.env"
 log() { echo -e "\033[1;32m[deploy]\033[0m $*"; }
 err() { echo -e "\033[1;31m[deploy]\033[0m $*" >&2; }
 
+# 以 postgres 用户执行（root 环境，无需 sudo；runuser 属 util-linux，Debian 自带）
+pg() { runuser -u postgres -- "$@"; }
+
 [ "$(id -u)" -eq 0 ] || { err "请用 root 运行：sudo bash deploy/deploy.sh"; exit 1; }
 [ -f "$APP_DIR/package.json" ] || { err "未在仓库根目录找到 package.json：$APP_DIR"; exit 1; }
 
@@ -67,15 +70,15 @@ systemctl enable --now redis-server
 # ---------- 数据库（仅首次建库建角色） ----------
 if [ "$FIRST_RUN" -eq 1 ]; then
   log "创建 PostgreSQL 角色与数据库..."
-  sudo -u postgres psql -v ON_ERROR_STOP=1 <<SQL
+  pg psql -v ON_ERROR_STOP=1 <<SQL
 DO \$do\$ BEGIN
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='${DB_USER}') THEN
     CREATE ROLE ${DB_USER} WITH LOGIN PASSWORD '${DB_PASS}';
   END IF;
 END \$do\$;
 SQL
-  sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}'" | grep -q 1 \
-    || sudo -u postgres createdb -O "${DB_USER}" "${DB_NAME}"
+  pg psql -tAc "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}'" | grep -q 1 \
+    || pg createdb -O "${DB_USER}" "${DB_NAME}"
 fi
 
 # ---------- 应用用户 ----------
