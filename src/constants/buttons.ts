@@ -2,7 +2,6 @@
 export const BTN = {
   QUERY: '🔍 查询用户',
   ADD_BLACKLIST: '🚫 录入黑名单',
-  MY_BLACKLIST: '📋 我的黑名单',
   ANNOUNCEMENT: '📢 机器人公告',
   TEACHER_MGMT: '👨‍🏫 老师管理',
   SYSTEM_SETTINGS: '⚙️ 系统设置',
@@ -12,13 +11,15 @@ export const BTN = {
   CONTINUE_ADD: '🚫 继续录入',
   UPDATE_REASON: '🔄 更新原因',
   DELETE_RECORD: '🗑 删除记录',
+  ADD_TEACHER: '➕ 添加老师',
+  REMOVE_TEACHER: '➖ 移除老师',
+  TEACHER_LIST: '📋 老师列表',
 } as const;
 
 /** Teacher 与 Admin 共有的功能按钮 */
 export const TEACHER_FEATURE_BUTTONS: string[] = [
   BTN.QUERY,
   BTN.ADD_BLACKLIST,
-  BTN.MY_BLACKLIST,
   BTN.ANNOUNCEMENT,
 ];
 

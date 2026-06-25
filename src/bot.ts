@@ -11,6 +11,7 @@ import { REQUEST_ID } from './constants/requests';
 import { selectUserKeyboard } from './keyboards/selectUser';
 import { registerUserShared } from './handlers/userShared';
 import { registerAddBlacklist } from './handlers/addBlacklist';
+import { registerTeacherMgmt } from './handlers/teacherMgmt';
 import { clearFlow } from './session';
 
 export const bot = new Telegraf<BotContext>(env.BOT_TOKEN);
@@ -53,7 +54,10 @@ bot.hears(TEACHER_FEATURE_BUTTONS, async (ctx) => {
   await ctx.reply(`「${ctx.message.text}」功能将于后续里程碑开放`);
 });
 
-// M2 占位：Admin 专属按钮（带角色二次校验）
+// 👨‍🏫 老师管理全流程（添加 / 移除 / 列表，仅管理员）（M7）
+registerTeacherMgmt(bot);
+
+// M2 占位：Admin 专属按钮（系统设置；老师管理已被上面拦截）
 bot.hears(ADMIN_ONLY_BUTTONS, async (ctx) => {
   if (ctx.dbUser?.role !== 'admin') {
     await ctx.reply('⛔ 该功能仅管理员可用');

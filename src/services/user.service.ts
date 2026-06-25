@@ -1,3 +1,4 @@
+import type { User } from '@prisma/client';
 import { prisma } from '../db/prisma';
 import { logger } from '../utils/logger';
 
@@ -20,4 +21,75 @@ export async function ensureAdmins(adminIds: bigint[]): Promise<void> {
     });
   }
   logger.info({ count: adminIds.length, ids: adminIds.map(String) }, '初始管理员引导完成');
+}
+
+/** 按 telegram_id 查用户 */
+export function findUserById(telegramId: bigint): Promise<User | null> {
+  return prisma.user.findUnique({ where: { telegramId } });
+}
+
+/** 在职老师列表（role=teacher 且 is_active=true），按创建时间升序 */
+export function listActiveTeachers(): Promise<User[]> {
+  return prisma.user.findMany({
+    where: { role: 'teacher', isActive: true },
+    orderBy: { createdAt: 'asc' },
+  });
+}
+
+export interface AddTeacherInput {
+  telegramId: bigint;
+  username: string | null;
+  firstName: string | null;
+}
+
+export interface AddTeacherResult {
+  status: 'created' | 'reactivated' | 'already_teacher' | 'is_admin';
+  user: User;
+}
+
+/**
+ * 添加老师，覆盖四种情况：
+ * - 已是管理员 → 拒绝（避免误降级）
+ * - 已是在职老师 → 仅刷新资料
+ * - 已停用老师 → 恢复在职
+ * - 新用户 → 新建为在职老师
+ */
+export async function addTeacher(input: AddTeacherInput): Promise<AddTeacherResult> {
+  const existing = await prisma.user.findUnique({ where: { telegramId: input.telegramId } });
+  if (existing) {
+    if (existing.role === 'admin') {
+      return { status: 'is_admin', user: existing };
+    }
+    if (existing.isActive) {
+      const user = await prisma.user.update({
+        where: { telegramId: input.telegramId },
+        data: { username: input.username, firstName: input.firstName },
+      });
+      return { status: 'already_teacher', user };
+    }
+    const user = await prisma.user.update({
+      where: { telegramId: input.telegramId },
+      data: { isActive: true, username: input.username, firstName: input.firstName },
+    });
+    return { status: 'reactivated', user };
+  }
+  const user = await prisma.user.create({
+    data: {
+      telegramId: input.telegramId,
+      username: input.username,
+      firstName: input.firstName,
+      role: 'teacher',
+      isActive: true,
+    },
+  });
+  return { status: 'created', user };
+}
+
+/** 停用老师（仅对在职老师生效）。返回更新后的用户，或 null（非在职老师）。 */
+export async function disableTeacher(telegramId: bigint): Promise<User | null> {
+  const existing = await prisma.user.findUnique({ where: { telegramId } });
+  if (!existing || existing.role !== 'teacher' || !existing.isActive) {
+    return null;
+  }
+  return prisma.user.update({ where: { telegramId }, data: { isActive: false } });
 }

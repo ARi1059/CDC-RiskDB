@@ -8,6 +8,7 @@ import type { SharedTarget, UsersSharedCompat } from '../telegram/userShareTypes
 import { findActiveByTarget } from '../services/blacklist.service';
 import { formatQueryResult } from '../views/queryResult';
 import { handleSelectedUserForAdd } from './addBlacklist';
+import { handleSelectedUserForAddTeacher } from './teacherMgmt';
 
 /**
  * 从 users_shared 服务消息提炼目标用户。
@@ -74,6 +75,10 @@ export function registerUserShared(bot: Telegraf<BotContext>): void {
       case REQUEST_ID.ADD_BLACKLIST:
         // M5：判重并分流到选原因 / 重复提示
         await handleSelectedUserForAdd(ctx, target);
+        break;
+      case REQUEST_ID.ADD_TEACHER:
+        // M7：添加老师授权
+        await handleSelectedUserForAddTeacher(ctx, target);
         break;
       default:
         await ctx.reply('（该选择用户场景将于后续里程碑接入）', mainMenuKeyboard(user.role));

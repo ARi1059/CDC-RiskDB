@@ -151,7 +151,7 @@ export function registerAddBlacklist(bot: Telegraf<BotContext>): void {
     await ctx.reply('请选择新的拉黑原因', reasonKeyboard());
   });
 
-  // 重复提示 → 删除记录（软删除）。M7「我的黑名单」删除将另行扩展。
+  // 重复提示 → 删除记录（软删除）。
   bot.hears(BTN.DELETE_RECORD, async (ctx) => {
     const user = ctx.dbUser;
     if (!user) return;
