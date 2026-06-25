@@ -1,0 +1,41 @@
+{
+  "name": "cdc-riskdb-bot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Telegram 黑名单共享机器人",
+  "license": "UNLICENSED",
+  "main": "dist/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.0.0",
+    "dotenv": "^16.4.0",
+    "ioredis": "^5.4.0",
+    "pino": "^9.0.0",
+    "telegraf": "^4.15.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
+    "pino-pretty": "^11.0.0",
+    "prettier": "^3.3.0",
+    "prisma": "^6.0.0",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.0",
+    "typescript-eslint": "^8.0.0"
+  }
+}
