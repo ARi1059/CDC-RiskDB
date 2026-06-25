@@ -2,9 +2,12 @@ import { Markup } from 'telegraf';
 import { REASONS } from '../constants/reasons';
 import { BTN } from '../constants/buttons';
 
-/** 选择拉黑原因键盘（每行一个原因 + 返回首页） */
+/** 选择拉黑原因键盘（每行两个原因 + 返回首页） */
 export function reasonKeyboard() {
-  const rows: string[][] = REASONS.map((r) => [r.button]);
+  const rows: string[][] = [];
+  for (let i = 0; i < REASONS.length; i += 2) {
+    rows.push(REASONS.slice(i, i + 2).map((r) => r.button));
+  }
   rows.push([BTN.HOME]);
   return Markup.keyboard(rows).resize();
 }
