@@ -25,7 +25,7 @@ brew services start redis
 createdb riskdb
 ```
 
-Ubuntu 24.04 用 `apt install postgresql redis-server` 并 `systemctl enable --now`。
+Debian 12 服务器请直接用一键部署脚本（见下方「部署」）。
 
 ## 本地开发
 
@@ -65,14 +65,20 @@ npm run build && npm start
 | `npm run prisma:generate` | 生成 Prisma Client |
 | `npm run prisma:migrate` | 开发迁移（M1 起使用） |
 
-## 部署（Ubuntu 24.04，无容器）
+## 部署（Debian 12，一键脚本）
 
-`npm ci` → `npm run prisma:generate` → `npm run build`，再用 **systemd 服务**（或 PM2）
-运行 `node dist/index.js`，崩溃自动重启；PostgreSQL / Redis 作为系统服务常驻。
+```bash
+git clone https://github.com/ARi1059/CDC-RiskDB.git && cd CDC-RiskDB
+sudo bash deploy/deploy.sh   # 按提示输入 BOT_TOKEN 与 ADMIN_TELEGRAM_IDS
+```
 
-## 里程碑
+脚本自动装 Node 22 / PostgreSQL / Redis、建库、写 `.env`、迁移、构建，并以 systemd 服务
+（专用用户 `cdcbot`，崩溃自动重启）运行；每日 `pg_dump` 备份。详见 [deploy/README.md](deploy/README.md)。
 
-当前：**M0 脚手架（已完成）** —— 依赖安装、Prisma Client 生成、TypeScript 构建均通过；
-空 bot 可启动、对任意文本消息回 `ok`、启动时连接 PostgreSQL + Redis。
+## 功能
 
-后续里程碑 M1–M10 见开发计划。
+- 🔍 查询用户 · 🚫 录入黑名单（判重 / 更新原因 / 软删除）· 📣 录入广播
+- 👨‍🏫 老师管理 · 📢 机器人公告 · 👑 管理员管理
+- 全键盘按钮交互、Telegram 用户分享获取目标、Admin / Teacher 两级权限
+
+详见 [需求文档](docs/开发文档-V1.0.md) 与 [开发计划](docs/开发计划-V1.0.md)。
