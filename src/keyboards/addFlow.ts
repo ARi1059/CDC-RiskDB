@@ -1,12 +1,13 @@
 import { Markup } from 'telegraf';
-import { REASONS } from '../constants/reasons';
+import type { Reason } from '@prisma/client';
+import { reasonButtonText } from '../constants/reasons';
 import { BTN } from '../constants/buttons';
 
-/** 选择拉黑原因键盘（每行两个原因 + 返回首页） */
-export function reasonKeyboard() {
+/** 选择拉黑原因键盘（每行两个原因 + 返回首页）。原因由数据库动态提供。 */
+export function reasonKeyboard(reasons: Reason[]) {
   const rows: string[][] = [];
-  for (let i = 0; i < REASONS.length; i += 2) {
-    rows.push(REASONS.slice(i, i + 2).map((r) => r.button));
+  for (let i = 0; i < reasons.length; i += 2) {
+    rows.push(reasons.slice(i, i + 2).map(reasonButtonText));
   }
   rows.push([BTN.HOME]);
   return Markup.keyboard(rows).resize();

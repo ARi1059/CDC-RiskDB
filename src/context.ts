@@ -14,12 +14,14 @@ export interface TargetLite {
  * - dup：判重命中后的「重复提示」待操作态
  * - updateReason：更新原因待选新原因态
  * - addManualInput：手动录入，等待老师发来 数字ID / @用户名 / 转发消息
+ * - addReasonInput：管理员新增拉黑原因，等待输入原因文案
  */
 export type Flow =
   | { kind: 'add'; step: 'reason' | 'confirm'; target: TargetLite; reason?: string }
   | { kind: 'dup'; target: TargetLite; recordId: string }
   | { kind: 'updateReason'; target: TargetLite; recordId: string }
   | { kind: 'addManualInput' }
+  | { kind: 'addReasonInput' }
   | { kind: 'publishAnnouncement' };
 
 /** 会话数据（存于 Redis） */

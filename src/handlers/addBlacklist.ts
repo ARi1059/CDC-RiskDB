@@ -11,7 +11,7 @@ import type { SharedTarget } from '../telegram/userShareTypes';
 import { getFlow, setFlow, clearFlow } from '../session';
 import { REQUEST_ID } from '../constants/requests';
 import { BTN } from '../constants/buttons';
-import { REASON_BUTTONS, reasonLabelFromButton } from '../constants/reasons';
+import { reasonButtonText } from '../constants/reasons';
 import { selectUserKeyboard } from '../keyboards/selectUser';
 import { reasonKeyboard, confirmKeyboard, duplicateKeyboard, successKeyboard } from '../keyboards/addFlow';
 import { mainMenuKeyboard } from '../keyboards/mainMenu';
@@ -22,6 +22,7 @@ import {
   updateRecordReason,
   softDeleteRecord,
 } from '../services/blacklist.service';
+import { listReasons, findReasonByLabel } from '../services/reason.service';
 import { logger } from '../utils/logger';
 import { broadcastNewEntry } from '../services/broadcast.service';
 
@@ -57,7 +58,13 @@ export async function handleSelectedUserForAdd(ctx: BotContext, target: SharedTa
   }
 
   setFlow(ctx, { kind: 'add', step: 'reason', target: lite });
-  await ctx.reply('请选择拉黑原因', reasonKeyboard());
+  const reasons = await listReasons();
+  if (reasons.length === 0) {
+    clearFlow(ctx);
+    await ctx.reply('暂无可选的拉黑原因，请联系管理员在「系统设置」中添加。', mainMenuKeyboard(user.role));
+    return;
+  }
+  await ctx.reply('请选择拉黑原因', reasonKeyboard(reasons));
 }
 
 /** 手动录入提示键盘：仅「返回首页」 */
@@ -176,6 +183,54 @@ export async function handleManualAddForward(
   return true;
 }
 
+/**
+ * 文本兜底前调用：处于「选原因 / 更新原因」态时，把文本当作所选原因（查库校验）处理。
+ * 返回 true 表示已消费（否则交回兜底）。
+ * 替代原静态 `bot.hears(REASON_BUTTONS)`——原因已动态化，按钮集合运行时才确定。
+ */
+export async function handleReasonPick(ctx: BotContext, text: string): Promise<boolean> {
+  const flow = getFlow(ctx);
+  const isReasonStep =
+    (flow?.kind === 'add' && flow.step === 'reason') || flow?.kind === 'updateReason';
+  if (!isReasonStep) return false;
+  const user = ctx.dbUser;
+  if (!user) {
+    clearFlow(ctx);
+    return true;
+  }
+
+  // 按钮文案反查 label：先按完整文案（emoji+label）匹配，再回退去掉 emoji 前缀。
+  const reasons = await listReasons();
+  const picked =
+    reasons.find((r) => reasonButtonText(r) === text) ?? (await findReasonByLabel(text.trim()));
+  if (!picked) return false; // 非有效原因 → 交回兜底（可能是误触其它文本）
+  const reasonLabel = picked.label;
+
+  if (flow?.kind === 'add' && flow.step === 'reason') {
+    flow.reason = reasonLabel;
+    flow.step = 'confirm';
+    setFlow(ctx, flow);
+    await ctx.reply(formatConfirm(flow.target, reasonLabel, operatorDisplay(user)), confirmKeyboard());
+    return true;
+  }
+
+  if (flow?.kind === 'updateReason') {
+    try {
+      const updated = await updateRecordReason(BigInt(flow.recordId), reasonLabel);
+      clearFlow(ctx);
+      await ctx.reply(formatUpdated(flow.target, reasonLabel, updated.updatedAt), successKeyboard());
+      logger.info({ recordId: flow.recordId, reason: reasonLabel }, '黑名单原因已更新');
+    } catch (err) {
+      logger.error({ err }, '更新原因失败');
+      clearFlow(ctx);
+      await ctx.reply('更新失败，请重试', mainMenuKeyboard(user.role));
+    }
+    return true;
+  }
+
+  return true;
+}
+
 /** 注册录入黑名单全流程处理器 */
 export function registerAddBlacklist(bot: Telegraf<BotContext>): void {
   // 入口：录入黑名单 / 继续录入
@@ -194,39 +249,7 @@ export function registerAddBlacklist(bot: Telegraf<BotContext>): void {
     );
   });
 
-  // 选择原因（用于「录入」与「更新原因」两种流程）
-  bot.hears(REASON_BUTTONS, async (ctx) => {
-    const user = ctx.dbUser;
-    if (!user) return;
-    const reasonLabel = reasonLabelFromButton(ctx.message.text);
-    if (!reasonLabel) return;
-    const flow = getFlow(ctx);
-
-    if (flow?.kind === 'add' && flow.step === 'reason') {
-      flow.reason = reasonLabel;
-      flow.step = 'confirm';
-      setFlow(ctx, flow);
-      await ctx.reply(formatConfirm(flow.target, reasonLabel, operatorDisplay(user)), confirmKeyboard());
-      return;
-    }
-
-    if (flow?.kind === 'updateReason') {
-      try {
-        const updated = await updateRecordReason(BigInt(flow.recordId), reasonLabel);
-        clearFlow(ctx);
-        await ctx.reply(formatUpdated(flow.target, reasonLabel, updated.updatedAt), successKeyboard());
-        logger.info({ recordId: flow.recordId, reason: reasonLabel }, '黑名单原因已更新');
-      } catch (err) {
-        logger.error({ err }, '更新原因失败');
-        clearFlow(ctx);
-        await ctx.reply('更新失败，请重试', mainMenuKeyboard(user.role));
-      }
-      return;
-    }
-
-    // 不在相关流程中：回主菜单
-    await ctx.reply('请选择操作', mainMenuKeyboard(user.role));
-  });
+  // 选择原因已改为 handleReasonPick（接入 bot.ts 文本链）：原因动态化，无法静态 hears。
 
   // 确认录入
   bot.hears(BTN.CONFIRM_ADD, async (ctx) => {
@@ -284,7 +307,13 @@ export function registerAddBlacklist(bot: Telegraf<BotContext>): void {
       return;
     }
     setFlow(ctx, { kind: 'updateReason', target: flow.target, recordId: flow.recordId });
-    await ctx.reply('请选择新的拉黑原因', reasonKeyboard());
+    const reasons = await listReasons();
+    if (reasons.length === 0) {
+      clearFlow(ctx);
+      await ctx.reply('暂无可选的拉黑原因，请联系管理员在「系统设置」中添加。', mainMenuKeyboard(user.role));
+      return;
+    }
+    await ctx.reply('请选择新的拉黑原因', reasonKeyboard(reasons));
   });
 
   // 重复提示 → 删除记录（软删除）。

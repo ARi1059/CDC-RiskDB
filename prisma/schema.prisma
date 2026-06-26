@@ -60,3 +60,16 @@ model Announcement {
 
   @@map("announcements")
 }
+
+/// 拉黑原因（管理员在系统设置中维护）。label 为入库 / 展示文案；emoji 仅用于键盘前缀显示。
+/// 删除原因不影响已录入的 blacklist 记录（reason 存的是文本快照）。
+model Reason {
+  id        BigInt   @id @default(autoincrement())
+  label     String   @unique @db.VarChar(50)
+  emoji     String?  @db.VarChar(16)
+  sortOrder Int      @default(0) @map("sort_order")
+  createdBy BigInt   @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("reasons")
+}

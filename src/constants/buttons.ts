@@ -17,6 +17,8 @@ export const BTN = {
   TEACHER_LIST: '📋 老师列表',
   PUBLISH_ANNOUNCEMENT: '📢 发布公告',
   ANNOUNCEMENT_MGMT: '📜 公告管理',
+  REASON_MGMT: '🏷 拉黑原因管理',
+  ADD_REASON: '➕ 新增原因',
   ADMIN_MGMT: '👑 管理员管理',
   ADD_ADMIN: '➕ 添加管理员',
   REMOVE_ADMIN: '➖ 移除管理员',

@@ -14,9 +14,11 @@ import {
   registerAddBlacklist,
   handleManualAddText,
   handleManualAddForward,
+  handleReasonPick,
 } from './handlers/addBlacklist';
 import { registerTeacherMgmt } from './handlers/teacherMgmt';
 import { registerAnnouncements, handleAnnouncementText } from './handlers/announcement';
+import { registerReasonMgmt, handleAddReasonText } from './handlers/reasonMgmt';
 import { registerAdminMgmt } from './handlers/adminMgmt';
 import { clearFlow } from './session';
 
@@ -58,6 +60,9 @@ registerAddBlacklist(bot);
 // 📢 机器人公告查看 + ⚙️ 系统设置（发布 / 管理公告）
 registerAnnouncements(bot);
 
+// 🏷 拉黑原因管理（新增 / 列表 / 删除，仅管理员）
+registerReasonMgmt(bot);
+
 // 👑 管理员管理（添加 / 移除 / 列表，仅管理员）
 registerAdminMgmt(bot);
 
@@ -87,9 +92,11 @@ bot.on(message('forward_origin'), async (ctx, next) => {
   return next();
 });
 
-// 其它文本：手动录入解析 → 发布公告捕获 → 否则回到主菜单（全键盘交互）
+// 其它文本：手动录入 → 选原因 → 新增原因 → 发布公告 → 否则回主菜单（各 flow.kind 互斥）
 bot.on(message('text'), async (ctx) => {
   if (await handleManualAddText(ctx, ctx.message.text)) return;
+  if (await handleReasonPick(ctx, ctx.message.text)) return;
+  if (await handleAddReasonText(ctx, ctx.message.text)) return;
   if (await handleAnnouncementText(ctx, ctx.message.text)) return;
   await showMainMenu(ctx);
 });

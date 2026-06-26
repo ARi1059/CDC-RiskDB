@@ -1,32 +1,29 @@
-/** 拉黑原因选项：button 为键盘文案（带 emoji），label 为入库与展示文案（纯中文）。 */
-export interface ReasonOption {
-  button: string;
-  label: string;
+import type { Reason } from '@prisma/client';
+
+/** 拉黑原因键盘按钮文案：有 emoji 则前缀，否则纯 label。 */
+export function reasonButtonText(reason: Pick<Reason, 'label' | 'emoji'>): string {
+  return reason.emoji ? `${reason.emoji} ${reason.label}` : reason.label;
 }
 
-export const REASONS: ReasonOption[] = [
-  { button: '🔨 桩机', label: '桩机' },
-  { button: '📏 粗大长', label: '粗大长' },
-  { button: '💊 磕药', label: '磕药' },
-  { button: '😈 变态', label: '变态' },
-  { button: '⛓️ SM', label: 'SM' },
-  { button: '🏃 跑单', label: '跑单' },
-  { button: '👀 专门看人', label: '专门看人' },
-  { button: '👥 同行', label: '同行' },
-  { button: '🤝 中介', label: '中介' },
-  { button: '💉 吸毒', label: '吸毒' },
-  { button: '🦹 抢劫或偷盗', label: '抢劫或偷盗' },
-  { button: '💰 诈骗', label: '诈骗' },
-  { button: '👊 暴力', label: '暴力' },
-  { button: '👎 素质不高', label: '素质不高' },
-  { button: '🧼 个人卫生差', label: '个人卫生差' },
-  { button: '🎣 钓鱼', label: '钓鱼' },
-];
+/** 检测单个 token 是否为 emoji（含变体选择符）。 */
+const EMOJI_RE = /^\p{Extended_Pictographic}(️)?$/u;
 
-/** 用于 hears 匹配的原因按钮文案集合 */
-export const REASON_BUTTONS: string[] = REASONS.map((r) => r.button);
-
-/** 由按钮文案反查入库 label */
-export function reasonLabelFromButton(button: string): string | undefined {
-  return REASONS.find((r) => r.button === button)?.label;
+/**
+ * 解析管理员输入的「新原因」文本，拆出可选 emoji 前缀与 label。
+ * - 「🎣 钓鱼」→ { emoji: '🎣', label: '钓鱼' }
+ * - 「钓鱼」  → { emoji: null, label: '钓鱼' }
+ * label 为空时返回 null（交由调用方提示重输）。
+ */
+export function parseReasonInput(raw: string): { emoji: string | null; label: string } | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const sepIndex = trimmed.search(/\s/);
+  if (sepIndex > 0) {
+    const head = trimmed.slice(0, sepIndex);
+    const rest = trimmed.slice(sepIndex + 1).trim();
+    if (EMOJI_RE.test(head) && rest) {
+      return { emoji: head, label: rest };
+    }
+  }
+  return { emoji: null, label: trimmed };
 }
